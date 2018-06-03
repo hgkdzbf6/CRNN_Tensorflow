@@ -13,7 +13,7 @@ import tensorflow as tf
 import os
 import os.path as ops
 import sys
-
+sys.path.append('.')
 from local_utils import establish_char_dict
 
 
@@ -97,12 +97,12 @@ class FeatureIO(object):
         for k, v in self.__ord_map.items():
             if v == str(temp):
                 temp = int(k)
-                return temp
-        raise KeyError("Character {} missing in ord_map.json".format(char))
+                break
 
         # TODO
         # Here implement a double way dict or two dict to quickly map ord and it's corresponding index
 
+        return temp
 
     def int_to_char(self, number):
         """
@@ -144,13 +144,16 @@ class FeatureIO(object):
         number_lists = np.ones(dense_shape, dtype=values.dtype)
         str_lists = []
         res = []
+        res_raw = []
         for i, index in enumerate(indices):
             number_lists[index[0], index[1]] = values[i]
         for number_list in number_lists:
             str_lists.append([self.int_to_char(val) for val in number_list])
         for str_list in str_lists:
             res.append(''.join(c for c in str_list if c != '*'))
-        return res
+        for str_list in str_lists:
+            res_raw.append(''.join(c for c in str_list))
+        return res, res_raw
 
 
 class TextFeatureWriter(FeatureIO):
@@ -222,7 +225,7 @@ class TextFeatureReader(FeatureIO):
                                                'labels': tf.VarLenFeature(tf.int64),
                                            })
         image = tf.decode_raw(features['images'], tf.uint8)
-        images = tf.reshape(image, [32, 100, 3])
+        images = tf.reshape(image, [64, 200, 3])
         labels = features['labels']
         labels = tf.cast(labels, tf.int32)
         imagenames = features['imagenames']

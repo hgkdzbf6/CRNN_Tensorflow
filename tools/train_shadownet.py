@@ -15,6 +15,8 @@ import time
 import numpy as np
 import argparse
 
+import sys
+sys.path.append('.')
 from crnn_model import crnn_model
 from local_utils import data_utils, log_utils
 from global_configuration import config
@@ -47,19 +49,21 @@ def train_shadownet(dataset_dir, weights_path=None):
     images, labels, imagenames = decoder.read_features(ops.join(dataset_dir, 'train_feature.tfrecords'),
                                                        num_epochs=None)
     inputdata, input_labels, input_imagenames = tf.train.shuffle_batch(
-        tensors=[images, labels, imagenames], batch_size=32, capacity=1000+2*32, min_after_dequeue=100, num_threads=1)
+        tensors=[images, labels, imagenames], batch_size=config.cfg.TRAIN.BATCH_SIZE,  \
+        capacity=1000 + 32*config.cfg.TRAIN.BATCH_SIZE, min_after_dequeue=100, num_threads=1)
 
     inputdata = tf.cast(x=inputdata, dtype=tf.float32)
 
     # initializa the net model
     shadownet = crnn_model.ShadowNet(phase='Train', hidden_nums=256, layers_nums=2, seq_length=25, num_classes=37)
 
+    # inputdata: batch*64*200*3
     with tf.variable_scope('shadow', reuse=False):
         net_out = shadownet.build_shadownet(inputdata=inputdata)
 
-    cost = tf.reduce_mean(tf.nn.ctc_loss(labels=input_labels, inputs=net_out, sequence_length=25*np.ones(32)))
+    cost = tf.reduce_mean(tf.nn.ctc_loss(labels=input_labels, inputs=net_out, sequence_length=25*np.ones(config.cfg.TRAIN.BATCH_SIZE)))
 
-    decoded, log_prob = tf.nn.ctc_beam_search_decoder(net_out, 25*np.ones(32), merge_repeated=False)
+    decoded, log_prob = tf.nn.ctc_beam_search_decoder(net_out, 25*np.ones(config.cfg.TRAIN.BATCH_SIZE), merge_repeated=False)
 
     sequence_dist = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), input_labels))
 
@@ -122,9 +126,8 @@ def train_shadownet(dataset_dir, weights_path=None):
                 [optimizer, cost, sequence_dist, decoded, input_labels, merge_summary_op])
 
             # calculate the precision
-            preds = decoder.sparse_tensor_to_str(preds[0])
-            gt_labels = decoder.sparse_tensor_to_str(gt_labels)
-
+            preds,pred_raw = decoder.sparse_tensor_to_str(preds[0])
+            gt_labels,_ = decoder.sparse_tensor_to_str(gt_labels)
             accuracy = []
 
             for index, gt_label in enumerate(gt_labels):
@@ -146,10 +149,11 @@ def train_shadownet(dataset_dir, weights_path=None):
                         else:
                             accuracy.append(0)
             accuracy = np.mean(np.array(accuracy).astype(np.float32), axis=0)
+
             #
             if epoch % config.cfg.TRAIN.DISPLAY_STEP == 0:
-                logger.info('Epoch: {:d} cost= {:9f} seq distance= {:9f} train accuracy= {:9f}'.format(
-                    epoch + 1, c, seq_distance, accuracy))
+                logger.info('Epoch: {:d} cost= {:9f} seq distance= {:9f} train accuracy= {:9f} test output={:s}'.format(
+                    epoch + 1, c, seq_distance, accuracy, pred_raw[0]))
 
             summary_writer.add_summary(summary=summary, global_step=epoch)
             saver.save(sess=sess, save_path=model_save_path, global_step=epoch)

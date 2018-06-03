@@ -154,8 +154,10 @@ class TextDataProvider(object):
         self.__validation_split = validation_split
         self.__shuffle = shuffle
         self.__normalization = normalization
-        self.__train_dataset_dir = ops.join(self.__dataset_dir, 'Train')
-        self.__test_dataset_dir = ops.join(self.__dataset_dir, 'Test')
+        # self.__train_dataset_dir = ops.join(self.__dataset_dir, 'Train')
+        # self.__test_dataset_dir = ops.join(self.__dataset_dir, 'Test')
+        self.__train_dataset_dir = self.__dataset_dir
+        self.__test_dataset_dir = self.__dataset_dir
 
         assert ops.exists(dataset_dir)
         assert ops.exists(self.__train_dataset_dir)
@@ -168,10 +170,9 @@ class TextDataProvider(object):
         with open(test_anno_path, 'r') as anno_file:
             info = np.array([tmp.strip().split() for tmp in anno_file.readlines()])
 
-            test_images_org = [cv2.imread(ops.join(self.__test_dataset_dir, tmp), cv2.IMREAD_COLOR)
-                               for tmp in info[:, 0]]
-            test_images = np.array([cv2.resize(tmp, (100, 32)) for tmp in test_images_org])
-
+            test_images = [cv2.imread(ops.join(self.__test_dataset_dir, tmp), cv2.IMREAD_COLOR)
+                                        for tmp in info[:,0]]
+            test_images = np.array([cv2.resize(tmp, (100, 32)) for tmp in test_images])
 
             test_labels = np.array([tmp for tmp in info[:, 1]])
 
@@ -188,9 +189,9 @@ class TextDataProvider(object):
         with open(train_anno_path, 'r') as anno_file:
             info = np.array([tmp.strip().split() for tmp in anno_file.readlines()])
 
-            train_images_org = [cv2.imread(ops.join(self.__train_dataset_dir, tmp), cv2.IMREAD_COLOR)
-                                     for tmp in info[:, 0]]
-            train_images = np.array([cv2.resize(tmp,(100,32)) for tmp in train_images_org])
+            train_images = [cv2.imread(ops.join(self.__train_dataset_dir, tmp), cv2.IMREAD_COLOR)
+                                    for tmp in info[:, 0]]
+            train_images = np.array([cv2.resize(tmp, (100, 32)) for tmp in train_images])
 
             train_labels = np.array([tmp for tmp in info[:, 1]])
             train_imagenames = np.array([ops.basename(tmp) for tmp in info[:, 0]])

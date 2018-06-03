@@ -8,6 +8,9 @@
 """
 Use shadow net to recognize the scene text
 """
+
+import sys
+sys.path.append('.')
 import tensorflow as tf
 import os.path as ops
 import numpy as np

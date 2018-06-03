@@ -1,0 +1,7 @@
+/home/zbf/tf/CRNN_Tensorflow/mjsynth/mnt/ramdisk/max/90kDICT32px
+python3 tools/write_text_features --dataset_dir /home/zbf/tf/CRNN_Tensorflow/mjsynth/mnt/ramdisk/max/90kDICT32px --save_dir /home/zbf/tf/CRNN_Tensorflow/my_model/
+
+python3 tools/write_text_features.py --dataset_dir ./dataset/out --save_dir ./my_model
+
+python3 tools/demo_shadownet.py  --image_path data/test_images/ag119_1.jpg  --weights_path ./model/shadownet/shadownet_2018-05-02-16-19-36.ckpt-10341
+

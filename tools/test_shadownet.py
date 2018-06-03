@@ -15,6 +15,8 @@ import argparse
 import numpy as np
 import math
 
+import sys
+sys.path.append('.')
 from local_utils import data_utils
 from crnn_model import crnn_model
 from global_configuration import config
@@ -22,7 +24,7 @@ from global_configuration import config
 
 def init_args():
     """
-
+    
     :return:
     """
     parser = argparse.ArgumentParser()

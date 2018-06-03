@@ -74,28 +74,31 @@ class ShadowNet(cnn_basenet.CNNBaseModel):
         :param inputdata: eg. batch*32*100*3 NHWC format
         :return:
         """
-        conv1 = self.__conv_stage(inputdata=inputdata, out_dims=64, name='conv1')  # batch*16*50*64
-        conv2 = self.__conv_stage(inputdata=conv1, out_dims=128, name='conv2')  # batch*8*25*128
-        conv3 = self.conv2d(inputdata=conv2, out_channel=256, kernel_size=3, stride=1, use_bias=False, name='conv3')  # batch*8*25*256
-        relu3 = self.relu(conv3) # batch*8*25*256
-        conv4 = self.conv2d(inputdata=relu3, out_channel=256, kernel_size=3, stride=1, use_bias=False, name='conv4')  # batch*8*25*256
-        relu4 = self.relu(conv4)  # batch*8*25*256
-        max_pool4 = self.maxpooling(inputdata=relu4, kernel_size=[2, 1], stride=[2, 1], padding='VALID')  # batch*4*25*256
-        conv5 = self.conv2d(inputdata=max_pool4, out_channel=512, kernel_size=3, stride=1, use_bias=False, name='conv5')  # batch*4*25*512
-        relu5 = self.relu(conv5)  # batch*4*25*512
+        conv0 = self.__conv_stage(inputdata=inputdata, out_dims=32, name='conv0')  # batch*16*50*64         # batch*32*100*64
+        # conv0_test = tf.slice(conv0,[0,0,0,0],[0,0,0,1])
+        conv1 = self.__conv_stage(inputdata=conv0, out_dims=64, name='conv1')  # batch*16*50*64         # batch*32*100*64
+        conv2 = self.__conv_stage(inputdata=conv1, out_dims=128, name='conv2')  # batch*8*25*128        # batch*16*50*128
+        conv3 = self.conv2d(inputdata=conv2, out_channel=256, kernel_size=3, stride=1, use_bias=False, name='conv3')  
+        # batch*8*25*256    # batch*16*50*256
+        relu3 = self.relu(conv3) # batch*8*25*256  # batch*16*50*256
+        conv4 = self.conv2d(inputdata=relu3, out_channel=256, kernel_size=3, stride=1, use_bias=False, name='conv4')  # batch*8*25*256  # batch*16*50*256
+        relu4 = self.relu(conv4)  # batch*8*25*256   # batch*16*50*256
+        max_pool4 = self.maxpooling(inputdata=relu4, kernel_size=[2, 1], stride=[2, 1], padding='VALID')  # batch*4*25*256 # batch*8*50*256 
+        conv5 = self.conv2d(inputdata=max_pool4, out_channel=512, kernel_size=3, stride=1, use_bias=False, name='conv5')  # batch*4*25*512   # batch*8*50*512
+        relu5 = self.relu(conv5)  # batch*4*25*512  # batch*8*50*512
         if self.phase.lower() == 'train':
             bn5 = self.layerbn(inputdata=relu5, is_training=True)
         else:
-            bn5 = self.layerbn(inputdata=relu5, is_training=False)  # batch*4*25*512
-        conv6 = self.conv2d(inputdata=bn5, out_channel=512, kernel_size=3, stride=1, use_bias=False, name='conv6')  # batch*4*25*512
-        relu6 = self.relu(conv6)  # batch*4*25*512
+            bn5 = self.layerbn(inputdata=relu5, is_training=False)  # batch*4*25*512  # batch*8*50*512
+        conv6 = self.conv2d(inputdata=bn5, out_channel=512, kernel_size=3, stride=1, use_bias=False, name='conv6')  # batch*4*25*512   # batch*8*50*512
+        relu6 = self.relu(conv6)  # batch*4*25*512    # batch*8*50*512
         if self.phase.lower() == 'train':
             bn6 = self.layerbn(inputdata=relu6, is_training=True)
         else:
-            bn6 = self.layerbn(inputdata=relu6, is_training=False)  # batch*4*25*512
-        max_pool6 = self.maxpooling(inputdata=bn6, kernel_size=[2, 1], stride=[2, 1])  # batch*2*25*512
-        conv7 = self.conv2d(inputdata=max_pool6, out_channel=512, kernel_size=2, stride=[2, 1], use_bias=False, name='conv7')  # batch*1*25*512
-        relu7 = self.relu(conv7)  # batch*1*25*512
+            bn6 = self.layerbn(inputdata=relu6, is_training=False)  # batch*4*25*512   # batch*8*50*512
+        max_pool6 = self.maxpooling(inputdata=bn6, kernel_size=[2, 1], stride=[2, 1])  # batch*2*25*512    # batch*4*25*512
+        conv7 = self.conv2d(inputdata=max_pool6, out_channel=512, kernel_size=2, stride=[2, 1], use_bias=False, name='conv7')  # batch*1*25*512   # batch*2*50*512
+        relu7 = self.relu(conv7)  # batch*1*25*512   # batch*2*50*512
         return relu7
 
     def __map_to_sequence(self, inputdata):
@@ -160,4 +163,4 @@ class ShadowNet(cnn_basenet.CNNBaseModel):
         # third apply the sequence label stage
         net_out, raw_pred = self.__sequence_label(inputdata=sequence)
 
-        return net_out
+        return net_out 
